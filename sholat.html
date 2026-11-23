@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#43a047">
+<title>Jadwal Sholat</title>
+<style>
+  /* ===== TAMPILAN ===== */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; min-height: 100%;
+    background: #e3f2fd; font-family: sans-serif; color: #0d3b66;
+  }
+
+  /* Bar atas */
+  #bar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; gap: 12px; align-items: center;
+    padding: 10px; background: #90caf9;
+  }
+  #bar a {
+    font-size: 26px; padding: 8px 16px; border-radius: 16px;
+    border: 4px solid #fff; background: #fff; text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,.25);
+  }
+  #bar h1 { margin: 0; font-size: 24px; }
+
+  #isi { max-width: 520px; margin: 0 auto; padding: 14px; }
+  #tanggal { text-align: center; font-size: 18px; margin: 4px 0 12px; }
+
+  /* Kotak "sholat berikutnya" */
+  #berikut {
+    text-align: center; background: #fff9c4; border: 6px solid #fff;
+    border-radius: 28px; padding: 14px; margin-bottom: 14px;
+    box-shadow: 0 3px 8px rgba(0,0,0,.2);
+  }
+  #berikut .kecil { font-size: 18px; }
+  #berikut .besar { font-size: 36px; font-weight: bold; margin: 4px 0; }
+  #berikut .hitung { font-size: 22px; }
+
+  /* Daftar lima waktu sholat */
+  .waktu {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 6px solid #fff; border-radius: 24px;
+    padding: 10px 16px; margin-bottom: 10px;
+    box-shadow: 0 3px 6px rgba(0,0,0,.2);
+  }
+  .waktu .ikon { font-size: 44px; line-height: 1; }
+  .waktu .nama { flex: 1; font-size: 28px; font-weight: bold; }
+  .waktu .jam  { font-size: 34px; font-weight: bold; }
+  .waktu.berikut { background: #fff176; border-color: #fbc02d; }
+  .waktu.lewat { opacity: .55; }
+
+  #pesan { text-align: center; font-size: 20px; padding: 20px; }
+  #catatan { text-align: center; font-size: 13px; opacity: .75; margin: 14px 0 20px; }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <a href="index.html" title="Menu">🏠</a>
+  <h1>Jadwal Sholat</h1>
+</div>
+
+<div id="isi">
+  <div id="tanggal"></div>
+  <div id="pesan">Memuat jadwal...</div>
+  <div id="berikut" hidden>
+    <div class="kecil">Sholat berikutnya</div>
+    <div class="besar" id="namaBerikut"></div>
+    <div class="hitung" id="hitungBerikut"></div>
+  </div>
+  <div id="daftar"></div>
+  <div id="catatan"></div>
+</div>
+
+<script>
+  // ===== PENGATURAN KOTA =====
+  // Untuk mengganti kota, ubah nama, lintang (lat), bujur (lon), dan zona waktu.
+  // Zona waktu Indonesia: 'Asia/Jakarta' (WIB), 'Asia/Makassar' (WITA), 'Asia/Jayapura' (WIT).
+  const KOTA = { nama: 'Batang', lat: -6.91, lon: 109.73, zona: 'Asia/Jakarta' };
+
+  // Metode perhitungan 20 = KEMENAG (Kementerian Agama Republik Indonesia)
+  const METODE = 20;
+
+  const SHOLAT = [
+    { kunci: 'Fajr',    nama: 'Subuh',   ikon: '🌅' },
+    { kunci: 'Dhuhr',   nama: 'Dzuhur',  ikon: '☀️' },
+    { kunci: 'Asr',     nama: 'Ashar',   ikon: '🌤️' },
+    { kunci: 'Maghrib', nama: 'Maghrib', ikon: '🌇' },
+    { kunci: 'Isha',    nama: 'Isya',    ikon: '🌙' }
+  ];
+
+  const elPesan = document.getElementById('pesan');
+  const elDaftar = document.getElementById('daftar');
+  const elBerikut = document.getElementById('berikut');
+
+  function dua(n) { return String(n).padStart(2, '0'); }
+
+  // Data dari API berbentuk "04:21 (WIB)"; kita ambil "04:21" saja.
+  function ambilJam(s) {
+    const m = /(\d{1,2}):(\d{2})/.exec(s || '');
+    return m ? dua(m[1]) + ':' + m[2] : '--:--';
+  }
+
+  function menitDari(jam) {
+    const bagian = jam.split(':');
+    return Number(bagian[0]) * 60 + Number(bagian[1]);
+  }
+
+  // ===== MEMUAT JADWAL SATU BULAN =====
+  // Jadwal sebulan disimpan di HP, jadi tidak perlu internet setiap hari.
+  async function muatBulan(tahun, bulan, paksaInternet) {
+    const kunci = 'jadwal-' + KOTA.nama + '-' + tahun + '-' + dua(bulan);
+    if (!paksaInternet) {
+      try {
+        const simpanan = localStorage.getItem(kunci);
+        if (simpanan) return JSON.parse(simpanan);
+      } catch (e) {}
+    }
+    const url = 'https://api.aladhan.com/v1/calendar/' + tahun + '/' + bulan +
+      '?latitude=' + KOTA.lat + '&longitude=' + KOTA.lon +
+      '&method=' + METODE + '&timezonestring=' + encodeURIComponent(KOTA.zona);
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const hasil = j.data.map((h) => {
+      const waktu = {};
+      SHOLAT.forEach((s) => { waktu[s.kunci] = ambilJam(h.timings[s.kunci]); });
+      return { tgl: h.date.gregorian.date, waktu: waktu };
+    });
+    try { localStorage.setItem(kunci, JSON.stringify(hasil)); } catch (e) {}
+    return hasil;
+  }
+
+  async function cariHariIni(sekarang) {
+    const hari = dua(sekarang.getDate()) + '-' + dua(sekarang.getMonth() + 1) + '-' + sekarang.getFullYear();
+    let bulan = await muatBulan(sekarang.getFullYear(), sekarang.getMonth() + 1, false);
+    let data = bulan.find((x) => x.tgl === hari);
+    if (!data) {
+      // Simpanan tidak cocok: ambil ulang dari internet.
+      bulan = await muatBulan(sekarang.getFullYear(), sekarang.getMonth() + 1, true);
+      data = bulan.find((x) => x.tgl === hari);
+    }
+    if (!data) throw new Error('tanggal tidak ditemukan');
+    return data.waktu;
+  }
+
+  // ===== TAMPILAN =====
+  let waktuHariIni = null;
+  const barisSholat = [];
+
+  function buatDaftar() {
+    SHOLAT.forEach((s) => {
+      const baris = document.createElement('div');
+      baris.className = 'waktu';
+      baris.innerHTML = '<span class="ikon"></span><span class="nama"></span><span class="jam"></span>';
+      baris.children[0].textContent = s.ikon;
+      baris.children[1].textContent = s.nama;
+      baris.children[2].textContent = waktuHariIni[s.kunci];
+      elDaftar.appendChild(baris);
+      barisSholat.push(baris);
+    });
+  }
+
+  function perbarui() {
+    const sekarang = new Date();
+    const menitSekarang = sekarang.getHours() * 60 + sekarang.getMinutes();
+    const idx = SHOLAT.findIndex((s) => menitDari(waktuHariIni[s.kunci]) > menitSekarang);
+
+    barisSholat.forEach((baris, i) => {
+      baris.classList.toggle('lewat', idx === -1 || i < idx);
+      baris.classList.toggle('berikut', i === idx);
+    });
+
+    const elNama = document.getElementById('namaBerikut');
+    const elHitung = document.getElementById('hitungBerikut');
+    if (idx === -1) {
+      elNama.textContent = 'Sholat hari ini sudah selesai';
+      elHitung.textContent = 'Sampai jumpa besok subuh 🌙';
+    } else {
+      const sisa = menitDari(waktuHariIni[SHOLAT[idx].kunci]) - menitSekarang;
+      const jam = Math.floor(sisa / 60);
+      const menit = sisa % 60;
+      elNama.textContent = SHOLAT[idx].ikon + ' ' + SHOLAT[idx].nama + '  ' + waktuHariIni[SHOLAT[idx].kunci];
+      elHitung.textContent = (jam > 0 ? jam + ' jam ' : '') + menit + ' menit lagi';
+    }
+  }
+
+  async function mulai() {
+    const sekarang = new Date();
+    document.getElementById('tanggal').textContent = sekarang.toLocaleDateString('id-ID',
+      { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    try {
+      waktuHariIni = await cariHariIni(sekarang);
+    } catch (e) {
+      elPesan.textContent = 'Jadwal belum bisa dimuat. Nyalakan internet sekali, lalu buka halaman ini lagi.';
+      return;
+    }
+    elPesan.hidden = true;
+    elBerikut.hidden = false;
+    buatDaftar();
+    perbarui();
+    setInterval(perbarui, 30000);
+
+    document.getElementById('catatan').textContent =
+      'Kota: ' + KOTA.nama + ' · Metode: Kemenag RI · Sumber: aladhan.com. ' +
+      'Jadwal bisa berbeda beberapa menit dari jadwal masjid setempat.';
+
+    // Menjelang akhir bulan, simpan juga jadwal bulan depan untuk dipakai tanpa internet.
+    if (sekarang.getDate() >= 20) {
+      const depan = new Date(sekarang.getFullYear(), sekarang.getMonth() + 1, 1);
+      muatBulan(depan.getFullYear(), depan.getMonth() + 1, false).catch(() => {});
+    }
+  }
+  mulai();
+</script>
+</body>
+</html>

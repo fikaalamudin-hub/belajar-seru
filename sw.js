@@ -4,10 +4,10 @@
 
 // Kalau Anda mengubah file aplikasi, naikkan angka versi ini (v1 -> v2)
 // supaya HP mengambil salinan yang baru.
-const CACHE = 'belajar-seru-v2';
+const CACHE = 'belajar-seru-v3';
 
 const INTI = [
-  './', 'index.html', 'gambar.html', 'kartu-hijaiyah.html',
+  './', 'index.html', 'gambar.html', 'kartu-hijaiyah.html', 'sholat.html', 'doa.html',
   'manifest.json', 'icon-192.png', 'icon-512.png'
 ];
 
@@ -23,12 +23,15 @@ const SUARA = [
   '029-yaa'
 ].map((n) => 'suara/' + n + '.mp3');
 
+// Suara doa (opsional): doa/1.mp3 sampai doa/10.mp3
+const DOA = Array.from({ length: 10 }, (_, i) => 'doa/' + (i + 1) + '.mp3');
+
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE);
     await cache.addAll(INTI);
     // Suara disalin satu per satu; kalau ada yang belum ada, yang lain tetap aman.
-    await Promise.all(SUARA.map((u) => cache.add(u).catch(() => {})));
+    await Promise.all(SUARA.concat(DOA).map((u) => cache.add(u).catch(() => {})));
   })());
   self.skipWaiting();
 });

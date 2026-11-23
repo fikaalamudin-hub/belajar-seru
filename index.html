@@ -20,25 +20,31 @@
   }
   #halaman {
     min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 18px; padding: 20px;
+    align-items: center; justify-content: center; gap: 16px; padding: 16px;
   }
-  h1 { margin: 0 0 6px; font-size: 34px; text-align: center; }
+  h1 { margin: 0; font-size: 32px; text-align: center; }
   .arab { font-family: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', 'Geeza Pro', serif; }
 
-  /* Tombol menu besar: satu tombol = satu aplikasi */
+  /* Dua kolom: satu tombol = satu aplikasi */
+  #kisiMenu {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+    width: min(96vw, 520px);
+  }
   .menu {
-    width: min(90vw, 420px); min-height: 150px;
+    min-height: 150px; padding: 8px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 6px; text-decoration: none; color: #1b4332;
-    border: 6px solid #fff; border-radius: 32px;
+    border: 6px solid #fff; border-radius: 28px;
     box-shadow: 0 4px 10px rgba(0,0,0,.25);
   }
   .menu:active { transform: scale(.96); }
-  .menu .gambar { font-size: 72px; line-height: 1; }
-  .menu .nama { font-size: 30px; font-weight: bold; }
+  .menu .gambar { font-size: 56px; line-height: 1.1; }
+  .menu .nama { font-size: 24px; font-weight: bold; text-align: center; }
 
   #menuGambar   { background: #ffe082; }
   #menuHijaiyah { background: #a5d6a7; }
+  #menuSholat   { background: #90caf9; }
+  #menuDoa      { background: #ce93d8; }
 </style>
 </head>
 <body>
@@ -46,15 +52,27 @@
   <h1>Belajar Seru</h1>
 
   <!-- Menambah aplikasi baru nanti = menambah satu blok <a> seperti ini -->
-  <a class="menu" id="menuGambar" href="gambar.html">
-    <span class="gambar">🎨</span>
-    <span class="nama">Gambar</span>
-  </a>
+  <div id="kisiMenu">
+    <a class="menu" id="menuGambar" href="gambar.html">
+      <span class="gambar">🎨</span>
+      <span class="nama">Gambar</span>
+    </a>
 
-  <a class="menu" id="menuHijaiyah" href="kartu-hijaiyah.html">
-    <span class="gambar arab">ا ب ت</span>
-    <span class="nama">Hijaiyah</span>
-  </a>
+    <a class="menu" id="menuHijaiyah" href="kartu-hijaiyah.html">
+      <span class="gambar arab">ا ب ت</span>
+      <span class="nama">Hijaiyah</span>
+    </a>
+
+    <a class="menu" id="menuSholat" href="sholat.html">
+      <span class="gambar">🕌</span>
+      <span class="nama">Jadwal Sholat</span>
+    </a>
+
+    <a class="menu" id="menuDoa" href="doa.html">
+      <span class="gambar">🤲</span>
+      <span class="nama">Doa Harian</span>
+    </a>
+  </div>
 </div>
 
 <script>

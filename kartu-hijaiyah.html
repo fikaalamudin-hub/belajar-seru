@@ -92,7 +92,7 @@
   <a class="tab" href="index.html" title="Menu" style="text-decoration:none">🏠</a>
   <button class="tab aktif" id="tabBelajar">📖 Belajar</button>
   <button class="tab" id="tabMain">🎮 Main</button>
-  <div id="bintang">⭐ 0</div>
+  <div id="bintang">0</div>
 </div>
 
 <!-- Layar belajar -->
@@ -139,10 +139,12 @@
   ];
 
   // ===== BINTANG (tersimpan di HP) =====
+  // Ikon hadiah: ganti dengan emoji lain, misalnya '🌙' atau '🌟' atau '🍎'
+  const IKON_HADIAH = '⭐';
   let bintang = 0;
   try { bintang = Number(localStorage.getItem('bintang')) || 0; } catch (e) {}
   const elBintang = document.getElementById('bintang');
-  function tampilkanBintang() { elBintang.textContent = '⭐ ' + bintang; }
+  function tampilkanBintang() { elBintang.textContent = IKON_HADIAH + ' ' + bintang; }
   function tambahBintang() {
     bintang++;
     try { localStorage.setItem('bintang', bintang); } catch (e) {}
