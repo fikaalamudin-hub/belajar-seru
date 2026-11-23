@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kartu Hijaiyah</title>
+<style>
+  /* ===== TAMPILAN UMUM ===== */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; min-height: 100%;
+    background: #e8f5e9; font-family: sans-serif; color: #1b4332;
+  }
+  .arab { font-family: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', 'Geeza Pro', serif; }
+
+  /* Bar atas */
+  #bar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; gap: 10px; align-items: center; justify-content: center;
+    padding: 10px; background: #a5d6a7;
+  }
+  .tab, #bintang {
+    font-size: 22px; padding: 12px 18px; border-radius: 16px;
+    border: 4px solid #fff; background: #fff; cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,.25);
+  }
+  .tab.aktif { border-color: #2e7d32; }
+  #bintang { cursor: default; }
+
+  .layar { display: none; padding: 16px; }
+  .layar.tampil { display: block; }
+
+  /* ===== MODE BELAJAR: kotak-kotak huruf ===== */
+  /* direction: rtl supaya urutan dibaca dari kanan, seperti tulisan Arab */
+  #kisi {
+    display: grid; direction: rtl; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    max-width: 700px; margin: 0 auto;
+  }
+  .kotak {
+    aspect-ratio: 1; font-size: 52px; line-height: 1;
+    border: 5px solid #fff; border-radius: 20px; background: #fff;
+    box-shadow: 0 3px 6px rgba(0,0,0,.25); cursor: pointer; color: #1b4332;
+  }
+  .kotak:active { transform: scale(.94); }
+
+  /* ===== KARTU BESAR (muncul saat huruf diketuk) ===== */
+  #kartu {
+    display: none; position: fixed; inset: 0; z-index: 10;
+    background: rgba(0,0,0,.5); align-items: center; justify-content: center;
+  }
+  #kartu.tampil { display: flex; }
+  #isiKartu {
+    width: min(92vw, 420px); background: #fffde7; border-radius: 28px;
+    padding: 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  #hurufBesar { font-size: 170px; line-height: 1.3; }
+  #namaHuruf { font-size: 36px; font-weight: bold; margin-bottom: 14px; }
+  .navigasi { display: flex; gap: 12px; justify-content: center; }
+  .navigasi button {
+    font-size: 34px; width: 72px; height: 72px; border-radius: 20px;
+    border: 4px solid #fff; background: #c8e6c9; cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,.25);
+  }
+
+  /* ===== MODE MAIN ===== */
+  #judulMain { text-align: center; font-size: 22px; margin: 0 0 8px; }
+  #soal { text-align: center; font-size: 150px; line-height: 1.3; }
+  #pilihan {
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    max-width: 600px; margin: 10px auto;
+  }
+  .pilihan {
+    width: 28vw; max-width: 160px; aspect-ratio: 1; font-size: 80px; line-height: 1;
+    border: 6px solid #fff; border-radius: 24px; background: #fff;
+    box-shadow: 0 3px 6px rgba(0,0,0,.25); cursor: pointer; color: #1b4332;
+    font-family: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', 'Geeza Pro', serif;
+  }
+  .pilihan.benar { background: #fff176; border-color: #fbc02d; transform: scale(1.1); }
+  .pilihan.salah { animation: goyang .4s; }
+  @keyframes goyang {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <!-- Tombol kembali ke menu utama -->
+  <a class="tab" href="index.html" title="Menu" style="text-decoration:none">🏠</a>
+  <button class="tab aktif" id="tabBelajar">📖 Belajar</button>
+  <button class="tab" id="tabMain">🎮 Main</button>
+  <div id="bintang">⭐ 0</div>
+</div>
+
+<!-- Layar belajar -->
+<div class="layar tampil" id="layarBelajar">
+  <div id="kisi"></div>
+</div>
+
+<!-- Layar main -->
+<div class="layar" id="layarMain">
+  <p id="judulMain">Cari huruf yang sama!</p>
+  <div id="soal" class="arab"></div>
+  <div id="pilihan"></div>
+</div>
+
+<!-- Kartu besar -->
+<div id="kartu">
+  <div id="isiKartu">
+    <div id="hurufBesar" class="arab"></div>
+    <div id="namaHuruf"></div>
+    <div class="navigasi">
+      <button id="tombolKanan" title="Berikutnya">▶</button>
+      <button id="tombolSuara" title="Dengarkan">🔊</button>
+      <button id="tombolKiri" title="Sebelumnya">◀</button>
+      <button id="tombolTutup" title="Tutup">✖</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== DATA 29 HURUF (termasuk Hamzah) =====
+  // Urutan ini juga menentukan nama file suara: suara/1.mp3 untuk Alif,
+  // suara/2.mp3 untuk Ba, dan seterusnya sampai suara/29.mp3 untuk Ya.
+  // Penulisan nama sebaiknya dicek lagi dengan ustadz/ustadzah Anda.
+  const HURUF = [
+    ['ا','Alif'], ['ب','Ba'],   ['ت','Ta'],   ['ث','Tsa'],
+    ['ج','Jim'],  ['ح','Ha'],   ['خ','Kho'],  ['د','Dal'],
+    ['ذ','Dzal'], ['ر','Ra'],   ['ز','Zai'],  ['س','Sin'],
+    ['ش','Syin'], ['ص','Shad'], ['ض','Dhad'], ['ط','Tha'],
+    ['ظ','Zha'],  ['ع','‘Ain'], ['غ','Ghain'],['ف','Fa'],
+    ['ق','Qaf'],  ['ك','Kaf'],  ['ل','Lam'],  ['م','Mim'],
+    ['ن','Nun'],  ['و','Wawu'], ['ه','Ha'],   ['ء','Hamzah'],
+    ['ي','Ya']
+  ];
+
+  // ===== BINTANG (tersimpan di HP) =====
+  let bintang = 0;
+  try { bintang = Number(localStorage.getItem('bintang')) || 0; } catch (e) {}
+  const elBintang = document.getElementById('bintang');
+  function tampilkanBintang() { elBintang.textContent = '⭐ ' + bintang; }
+  function tambahBintang() {
+    bintang++;
+    try { localStorage.setItem('bintang', bintang); } catch (e) {}
+    tampilkanBintang();
+  }
+  tampilkanBintang();
+
+  // ===== SUARA =====
+  // 1) Suara huruf: file rekaman dari Anda/ustadzah (kalau belum ada, tidak ada bunyi).
+  let audioAktif = null;
+  function putarSuara(i) {
+    try {
+      if (audioAktif) audioAktif.pause();
+      audioAktif = new Audio('suara/' + (i + 1) + '.mp3');
+      audioAktif.play().catch(() => {});
+    } catch (e) {}
+  }
+
+  // 2) Bunyi "ting" sederhana untuk benar/salah (dibuat dari kode, tanpa file).
+  let audioCtx = null;
+  function bunyi(nada, lama) {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.frequency.value = nada;
+      g.gain.value = 0.15;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + lama);
+    } catch (e) {}
+  }
+
+  // ===== PINDAH LAYAR =====
+  const layarBelajar = document.getElementById('layarBelajar');
+  const layarMain = document.getElementById('layarMain');
+  const tabBelajar = document.getElementById('tabBelajar');
+  const tabMain = document.getElementById('tabMain');
+
+  tabBelajar.onclick = () => {
+    layarBelajar.classList.add('tampil'); layarMain.classList.remove('tampil');
+    tabBelajar.classList.add('aktif'); tabMain.classList.remove('aktif');
+  };
+  tabMain.onclick = () => {
+    layarMain.classList.add('tampil'); layarBelajar.classList.remove('tampil');
+    tabMain.classList.add('aktif'); tabBelajar.classList.remove('aktif');
+    soalBaru();
+  };
+
+  // ===== MODE BELAJAR =====
+  const kisi = document.getElementById('kisi');
+  const kartu = document.getElementById('kartu');
+  let nomor = 0;   // huruf yang sedang tampil di kartu besar
+
+  HURUF.forEach((h, i) => {
+    const b = document.createElement('button');
+    b.className = 'kotak arab';
+    b.textContent = h[0];
+    b.onclick = () => bukaKartu(i);
+    kisi.appendChild(b);
+  });
+
+  function bukaKartu(i) {
+    nomor = (i + HURUF.length) % HURUF.length;
+    document.getElementById('hurufBesar').textContent = HURUF[nomor][0];
+    document.getElementById('namaHuruf').textContent = HURUF[nomor][1];
+    kartu.classList.add('tampil');
+    putarSuara(nomor);
+  }
+
+  document.getElementById('tombolKanan').onclick = () => bukaKartu(nomor + 1);
+  document.getElementById('tombolKiri').onclick  = () => bukaKartu(nomor - 1);
+  document.getElementById('tombolSuara').onclick = () => putarSuara(nomor);
+  document.getElementById('tombolTutup').onclick = () => kartu.classList.remove('tampil');
+
+  // ===== MODE MAIN: cari huruf yang sama =====
+  const elSoal = document.getElementById('soal');
+  const elPilihan = document.getElementById('pilihan');
+  let target = 0;
+  let terkunci = false;
+
+  function acak(daftar) {
+    for (let i = daftar.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [daftar[i], daftar[j]] = [daftar[j], daftar[i]];
+    }
+  }
+
+  function soalBaru() {
+    terkunci = false;
+    target = Math.floor(Math.random() * HURUF.length);
+
+    // 3 pilihan: 1 benar + 2 pengecoh yang berbeda
+    const pilihan = [target];
+    while (pilihan.length < 3) {
+      const r = Math.floor(Math.random() * HURUF.length);
+      if (!pilihan.includes(r)) pilihan.push(r);
+    }
+    acak(pilihan);
+
+    elSoal.textContent = HURUF[target][0];
+    elPilihan.innerHTML = '';
+    pilihan.forEach(i => {
+      const b = document.createElement('button');
+      b.className = 'pilihan';
+      b.textContent = HURUF[i][0];
+      b.onclick = () => jawab(i, b);
+      elPilihan.appendChild(b);
+    });
+  }
+
+  function jawab(i, tombol) {
+    if (terkunci) return;
+    if (i === target) {
+      terkunci = true;
+      tombol.classList.add('benar');
+      bunyi(660, 0.15);
+      setTimeout(() => bunyi(880, 0.25), 150);
+      tambahBintang();
+      putarSuara(target);
+      setTimeout(soalBaru, 1400);
+    } else {
+      tombol.classList.add('salah');
+      bunyi(200, 0.25);
+      setTimeout(() => tombol.classList.remove('salah'), 400);
+    }
+  }
+</script>
+</body>
+</html>

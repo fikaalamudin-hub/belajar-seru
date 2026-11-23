@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#43a047">
+<title>Belajar Seru</title>
+
+<!-- Supaya bisa "dipasang" di layar HP seperti aplikasi biasa -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+  /* ===== TAMPILAN ===== */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; min-height: 100%;
+    background: #fff8e1; font-family: sans-serif; color: #1b4332;
+  }
+  #halaman {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px; padding: 20px;
+  }
+  h1 { margin: 0 0 6px; font-size: 34px; text-align: center; }
+  .arab { font-family: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', 'Geeza Pro', serif; }
+
+  /* Tombol menu besar: satu tombol = satu aplikasi */
+  .menu {
+    width: min(90vw, 420px); min-height: 150px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; text-decoration: none; color: #1b4332;
+    border: 6px solid #fff; border-radius: 32px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.25);
+  }
+  .menu:active { transform: scale(.96); }
+  .menu .gambar { font-size: 72px; line-height: 1; }
+  .menu .nama { font-size: 30px; font-weight: bold; }
+
+  #menuGambar   { background: #ffe082; }
+  #menuHijaiyah { background: #a5d6a7; }
+</style>
+</head>
+<body>
+<div id="halaman">
+  <h1>Belajar Seru</h1>
+
+  <!-- Menambah aplikasi baru nanti = menambah satu blok <a> seperti ini -->
+  <a class="menu" id="menuGambar" href="gambar.html">
+    <span class="gambar">🎨</span>
+    <span class="nama">Gambar</span>
+  </a>
+
+  <a class="menu" id="menuHijaiyah" href="kartu-hijaiyah.html">
+    <span class="gambar arab">ا ب ت</span>
+    <span class="nama">Hijaiyah</span>
+  </a>
+</div>
+
+<script>
+  // Mendaftarkan "pekerja latar" agar aplikasi tetap jalan tanpa internet.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

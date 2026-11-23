@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Papan Gambar</title>
+<style>
+  /* ===== TAMPILAN ===== */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: #fff8e7; font-family: sans-serif;
+  }
+  #aplikasi { display: flex; flex-direction: column; height: 100%; }
+
+  /* Baris tombol di atas */
+  #toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 10px; justify-content: center; align-items: center;
+    background: #ffe9a8;
+  }
+  .warna {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 5px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,.3);
+    padding: 0; cursor: pointer;
+  }
+  .warna.aktif { border-color: #333; transform: scale(1.15); }
+
+  .tombol {
+    min-width: 56px; height: 56px; font-size: 28px;
+    border: 5px solid #fff; border-radius: 16px; background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,.3); cursor: pointer;
+  }
+  .tombol.aktif { border-color: #333; }
+
+  /* Area gambar */
+  #area { flex: 1; position: relative; }
+  #papan { position: absolute; inset: 0; background: #fff; touch-action: none; }
+</style>
+</head>
+<body>
+<div id="aplikasi">
+  <div id="toolbar">
+    <!-- Tombol kembali ke menu utama -->
+    <a class="tombol" href="index.html" title="Menu"
+       style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">🏠</a>
+
+    <!-- Warna dibuat otomatis oleh JavaScript di bawah -->
+    <span id="daftarWarna" style="display:contents"></span>
+
+    <!-- Ukuran kuas -->
+    <button class="tombol" data-tebal="6"  title="Kecil">•</button>
+    <button class="tombol aktif" data-tebal="14" title="Sedang" style="font-size:40px">•</button>
+    <button class="tombol" data-tebal="30" title="Besar"  style="font-size:60px;line-height:0">•</button>
+
+    <!-- Penghapus, bersihkan, simpan -->
+    <button class="tombol" id="tombolHapus" title="Penghapus">🧽</button>
+    <button class="tombol" id="tombolBersih" title="Mulai baru">🗑️</button>
+    <button class="tombol" id="tombolSimpan" title="Simpan gambar">💾</button>
+  </div>
+
+  <div id="area">
+    <canvas id="papan"></canvas>
+  </div>
+</div>
+
+<script>
+  // ===== PENGATURAN AWAL =====
+  const DAFTAR_WARNA = ['#e53935', '#fb8c00', '#fdd835', '#43a047',
+                        '#1e88e5', '#8e24aa', '#6d4c41', '#212121'];
+
+  let warna = DAFTAR_WARNA[0];   // warna yang sedang dipakai
+  let tebal = 14;                // tebal kuas
+  let modeHapus = false;         // true kalau sedang pakai penghapus
+  let sedangMenggambar = false;
+  let titikTerakhir = null;
+
+  const papan = document.getElementById('papan');
+  const area  = document.getElementById('area');
+  const ctx   = papan.getContext('2d');
+
+  // ===== UKURAN KANVAS =====
+  // Kanvas dibuat sebesar area layar, dan tetap tajam di layar HP.
+  function aturUkuran() {
+    // simpan gambar lama supaya tidak hilang saat ukuran berubah
+    const salinan = document.createElement('canvas');
+    salinan.width = papan.width;
+    salinan.height = papan.height;
+    salinan.getContext('2d').drawImage(papan, 0, 0);
+
+    const dpr = window.devicePixelRatio || 1;
+    papan.width  = area.clientWidth  * dpr;
+    papan.height = area.clientHeight * dpr;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, papan.width, papan.height);
+    ctx.drawImage(salinan, 0, 0);
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+  aturUkuran();
+  window.addEventListener('resize', aturUkuran);
+
+  // ===== MENGGAMBAR =====
+  function posisi(e) {
+    const kotak = papan.getBoundingClientRect();
+    return { x: e.clientX - kotak.left, y: e.clientY - kotak.top };
+  }
+
+  function garis(dari, ke) {
+    ctx.strokeStyle = modeHapus ? '#ffffff' : warna;
+    ctx.lineWidth = modeHapus ? tebal * 2 : tebal;
+    ctx.beginPath();
+    ctx.moveTo(dari.x, dari.y);
+    ctx.lineTo(ke.x, ke.y);
+    ctx.stroke();
+  }
+
+  papan.addEventListener('pointerdown', (e) => {
+    sedangMenggambar = true;
+    papan.setPointerCapture(e.pointerId);
+    titikTerakhir = posisi(e);
+    // satu ketukan = satu titik
+    garis(titikTerakhir, { x: titikTerakhir.x + 0.01, y: titikTerakhir.y });
+  });
+
+  papan.addEventListener('pointermove', (e) => {
+    if (!sedangMenggambar) return;
+    const titikBaru = posisi(e);
+    garis(titikTerakhir, titikBaru);
+    titikTerakhir = titikBaru;
+  });
+
+  function selesai() { sedangMenggambar = false; }
+  papan.addEventListener('pointerup', selesai);
+  papan.addEventListener('pointercancel', selesai);
+
+  // ===== TOMBOL WARNA =====
+  const wadahWarna = document.getElementById('daftarWarna');
+  DAFTAR_WARNA.forEach((kode, i) => {
+    const b = document.createElement('button');
+    b.className = 'warna' + (i === 0 ? ' aktif' : '');
+    b.style.background = kode;
+    b.addEventListener('click', () => {
+      warna = kode;
+      modeHapus = false;
+      document.getElementById('tombolHapus').classList.remove('aktif');
+      document.querySelectorAll('.warna').forEach(x => x.classList.remove('aktif'));
+      b.classList.add('aktif');
+    });
+    wadahWarna.appendChild(b);
+  });
+
+  // ===== TOMBOL UKURAN KUAS =====
+  document.querySelectorAll('[data-tebal]').forEach(b => {
+    b.addEventListener('click', () => {
+      tebal = Number(b.dataset.tebal);
+      document.querySelectorAll('[data-tebal]').forEach(x => x.classList.remove('aktif'));
+      b.classList.add('aktif');
+    });
+  });
+
+  // ===== PENGHAPUS =====
+  const tombolHapus = document.getElementById('tombolHapus');
+  tombolHapus.addEventListener('click', () => {
+    modeHapus = !modeHapus;
+    tombolHapus.classList.toggle('aktif', modeHapus);
+  });
+
+  // ===== MULAI BARU =====
+  document.getElementById('tombolBersih').addEventListener('click', () => {
+    if (confirm('Hapus semua gambar?')) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, papan.width, papan.height);
+      ctx.restore();
+    }
+  });
+
+  // ===== SIMPAN GAMBAR =====
+  document.getElementById('tombolSimpan').addEventListener('click', () => {
+    papan.toBlob((blob) => {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'gambarku.png';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+  });
+</script>
+</body>
+</html>
