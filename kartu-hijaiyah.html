@@ -123,18 +123,19 @@
 
 <script>
   // ===== DATA 29 HURUF (termasuk Hamzah) =====
-  // Urutan ini juga menentukan nama file suara: suara/1.mp3 untuk Alif,
-  // suara/2.mp3 untuk Ba, dan seterusnya sampai suara/29.mp3 untuk Ya.
+  // Setiap huruf: [huruf, nama yang tampil, nama file suara di folder suara/ tanpa .mp3]
+  // Contoh: '001-alif' berarti file suara/001-alif.mp3
+  // Nama file HARUS sama persis (huruf besar/kecil juga) dengan yang ada di GitHub.
   // Penulisan nama sebaiknya dicek lagi dengan ustadz/ustadzah Anda.
   const HURUF = [
-    ['ا','Alif'], ['ب','Ba'],   ['ت','Ta'],   ['ث','Tsa'],
-    ['ج','Jim'],  ['ح','Ha'],   ['خ','Kho'],  ['د','Dal'],
-    ['ذ','Dzal'], ['ر','Ra'],   ['ز','Zai'],  ['س','Sin'],
-    ['ش','Syin'], ['ص','Shad'], ['ض','Dhad'], ['ط','Tha'],
-    ['ظ','Zha'],  ['ع','‘Ain'], ['غ','Ghain'],['ف','Fa'],
-    ['ق','Qaf'],  ['ك','Kaf'],  ['ل','Lam'],  ['م','Mim'],
-    ['ن','Nun'],  ['و','Wawu'], ['ه','Ha'],   ['ء','Hamzah'],
-    ['ي','Ya']
+    ['ا','Alif','001-alif'], ['ب','Ba','002-ba'], ['ت','Ta','003-taa'], ['ث','Tsa','004-tsa'],
+    ['ج','Jim','005-jeem'], ['ح','Ha','006-haa'], ['خ','Kho','007-khaa'], ['د','Dal','008-dal'],
+    ['ذ','Dzal','009-dhal'], ['ر','Ra','010-raa'], ['ز','Zai','011-zai'], ['س','Sin','012-seen'],
+    ['ش','Syin','013-sheen'], ['ص','Shad','014-saad'], ['ض','Dhad','015-dhaad'], ['ط','Tha','016-tha'],
+    ['ظ','Zha','017-dhaa'], ['ع','‘Ain','018-ain'], ['غ','Ghain','019-ghain'], ['ف','Fa','020-faa'],
+    ['ق','Qaf','021-qaaf'], ['ك','Kaf','022-kaaf'], ['ل','Lam','023-laam'], ['م','Mim','024-meem'],
+    ['ن','Nun','025-noon'], ['و','Wawu','026-waw'], ['ه','Ha','027-ha'], ['ء','Hamzah','028-hamza'],
+    ['ي','Ya','029-yaa']
   ];
 
   // ===== BINTANG (tersimpan di HP) =====
@@ -150,12 +151,12 @@
   tampilkanBintang();
 
   // ===== SUARA =====
-  // 1) Suara huruf: file rekaman dari Anda/ustadzah (kalau belum ada, tidak ada bunyi).
+  // 1) Suara huruf: file rekaman di folder suara/ (kalau belum ada, tidak ada bunyi).
   let audioAktif = null;
   function putarSuara(i) {
     try {
       if (audioAktif) audioAktif.pause();
-      audioAktif = new Audio('suara/' + (i + 1) + '.mp3');
+      audioAktif = new Audio('suara/' + HURUF[i][2] + '.mp3');
       audioAktif.play().catch(() => {});
     } catch (e) {}
   }

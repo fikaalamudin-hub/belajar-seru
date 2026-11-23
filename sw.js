@@ -4,15 +4,24 @@
 
 // Kalau Anda mengubah file aplikasi, naikkan angka versi ini (v1 -> v2)
 // supaya HP mengambil salinan yang baru.
-const CACHE = 'belajar-seru-v1';
+const CACHE = 'belajar-seru-v2';
 
 const INTI = [
   './', 'index.html', 'gambar.html', 'kartu-hijaiyah.html',
   'manifest.json', 'icon-192.png', 'icon-512.png'
 ];
 
-// File suara huruf: suara/1.mp3 sampai suara/29.mp3
-const SUARA = Array.from({ length: 29 }, (_, i) => 'suara/' + (i + 1) + '.mp3');
+// File suara huruf (harus sama persis dengan nama di folder suara/)
+const SUARA = [
+  '001-alif', '002-ba', '003-taa', '004-tsa',
+  '005-jeem', '006-haa', '007-khaa', '008-dal',
+  '009-dhal', '010-raa', '011-zai', '012-seen',
+  '013-sheen', '014-saad', '015-dhaad', '016-tha',
+  '017-dhaa', '018-ain', '019-ghain', '020-faa',
+  '021-qaaf', '022-kaaf', '023-laam', '024-meem',
+  '025-noon', '026-waw', '027-ha', '028-hamza',
+  '029-yaa'
+].map((n) => 'suara/' + n + '.mp3');
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
